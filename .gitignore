@@ -146,3 +146,4 @@ web/dist/
 # Production
 /build
 /dist
+.env
