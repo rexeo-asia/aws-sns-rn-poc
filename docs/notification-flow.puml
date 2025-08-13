@@ -1,0 +1,72 @@
+@startuml Notification Delivery Flow
+
+title Push Notification Delivery Process
+
+actor Admin
+participant "Web Dashboard" as Web
+participant "Express API" as API
+participant "PostgreSQL" as DB
+participant "Firebase Admin" as Firebase
+participant "Firebase FCM" as FCM
+participant "Mobile App" as App
+participant User
+
+== Sending Notification from Dashboard ==
+
+Admin -> Web : Compose notification
+Web -> Web : Select target devices
+Admin -> Web : Click "Send"
+Web -> API : POST /api/notifications/send\n{deviceIds[], title, body, data}
+
+API -> DB : Get device tokens for deviceIds
+DB -> API : Return active device records
+
+loop For each device
+  API -> Firebase : Send notification via Admin SDK
+  Firebase -> FCM : Route to device platform
+  API -> DB : Log notification attempt
+  
+  alt Successful delivery
+    FCM -> App : Push notification received
+    App -> App : Store notification locally
+    App -> User : Display notification
+    DB -> API : Mark as 'sent'
+  else Delivery failed
+    FCM -> API : Delivery failure
+    DB -> API : Mark as 'failed'
+  end
+end
+
+API -> Web : Return delivery results\n{totalSent, totalFailed, results[]}
+Web -> Admin : Show success/failure summary
+
+== Test Notification Flow ==
+
+Admin -> Web : Click "Send Test"
+Web -> API : POST /api/notifications/test\n{deviceId}
+API -> API : Generate test notification data
+API -> Firebase : Send test notification
+Firebase -> FCM : Deliver test message
+FCM -> App : Test notification received
+App -> User : Display test notification
+API -> Web : Test notification sent
+Web -> Admin : Show success message
+
+== Background Processing ==
+
+note over API, DB
+  All notifications are logged with:
+  - Device ID and recipient info
+  - Message content and metadata
+  - Delivery status and timestamp
+  - Error details if delivery failed
+end note
+
+note over App
+  Mobile app handles notifications in:
+  - Foreground: Direct display
+  - Background: System notification
+  - App closed: System notification
+end note
+
+@enduml

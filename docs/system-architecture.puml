@@ -1,0 +1,57 @@
+@startuml System Architecture
+
+title Push Notification System Architecture
+
+!define WEBAPP_COLOR #3B82F6
+!define MOBILE_COLOR #10B981
+!define BACKEND_COLOR #F59E0B
+!define DATABASE_COLOR #8B5CF6
+!define EXTERNAL_COLOR #EF4444
+
+package "Frontend Applications" {
+  [Mobile App\n(React Native)] as MobileApp WEBAPP_COLOR
+  [Web Dashboard\n(React)] as WebApp WEBAPP_COLOR
+}
+
+package "Backend Services" {
+  [Express API Server] as API BACKEND_COLOR
+  [Firebase Admin SDK] as Firebase BACKEND_COLOR
+  [AWS SNS Service] as SNS BACKEND_COLOR
+}
+
+package "Data Storage" {
+  [PostgreSQL Database] as DB DATABASE_COLOR
+  [Device Registry] as DeviceRegistry DATABASE_COLOR
+  [Notification Logs] as NotificationLogs DATABASE_COLOR
+}
+
+package "External Services" {
+  [Firebase Cloud Messaging] as FCM EXTERNAL_COLOR
+  [AWS SNS Platform] as AWSPlatform EXTERNAL_COLOR
+}
+
+MobileApp --> API : "Register Device\n& Get Notifications"
+WebApp --> API : "Send Notifications\n& View Dashboard"
+
+API --> DB : "Store Device Info\n& Notification History"
+API --> Firebase : "Send Push Notifications"
+API --> SNS : "Alternative Push Delivery"
+
+Firebase --> FCM : "Deliver to Mobile Devices"
+SNS --> AWSPlatform : "Cross-Platform Delivery"
+
+FCM --> MobileApp : "Push Notifications"
+AWSPlatform --> MobileApp : "Alternative Delivery"
+
+DeviceRegistry --|> DB
+NotificationLogs --|> DB
+
+note top of MobileApp : "Registers for push notifications\nReceives and displays notifications\nProvides device management"
+
+note top of WebApp : "Admin interface\nDevice management\nNotification composer\nHistory and analytics"
+
+note top of API : "RESTful API\nDevice registration\nNotification routing\nData management"
+
+note bottom of DB : "Device tokens and metadata\nNotification history\nSystem analytics"
+
+@enduml

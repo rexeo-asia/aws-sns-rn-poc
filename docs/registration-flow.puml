@@ -1,0 +1,58 @@
+@startuml Device Registration Flow
+
+title Device Registration Process
+
+actor User
+participant "Mobile App" as App
+participant "Express API" as API
+participant "PostgreSQL" as DB
+participant "Firebase FCM" as FCM
+
+== First Time Registration ==
+
+User -> App : Opens app
+App -> App : Check local device ID
+App -> FCM : Request push token
+FCM -> App : Return push token
+App -> API : POST /api/devices/register\n{deviceId, pushToken, platform, deviceName}
+API -> DB : Check if device exists
+DB -> API : No device found
+
+API -> DB : INSERT new device record
+DB -> API : Device created successfully
+API -> App : Registration successful
+App -> App : Store registration status locally
+App -> User : Show "Device registered" message
+
+== Existing Device Registration ==
+
+User -> App : Opens app (returning user)
+App -> App : Check local device ID (exists)
+App -> FCM : Get current push token
+FCM -> App : Return current push token
+App -> API : POST /api/devices/register\n{deviceId, pushToken, platform, deviceName}
+API -> DB : Check if device exists
+DB -> API : Device found
+
+API -> DB : UPDATE device with new token/info
+DB -> API : Device updated successfully
+API -> App : Registration updated
+App -> App : Update local registration status
+App -> User : Device ready for notifications
+
+== Token Refresh Scenario ==
+
+FCM -> App : Token refreshed (automatic)
+App -> API : POST /api/devices/register\n{deviceId, newPushToken, platform, deviceName}
+API -> DB : UPDATE device with new push token
+DB -> API : Token updated successfully
+API -> App : Token update confirmed
+
+note over App, DB
+  The registration endpoint is idempotent:
+  - New devices are created
+  - Existing devices are updated
+  - Always maintains current token validity
+end note
+
+@enduml
