@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
-import { Bell, Trash2, MoreVertical, Clock } from 'lucide-react-native';
+import { Bell, Trash2, MoveVertical as MoreVertical, Clock } from 'lucide-react-native';
 import { NotificationService } from '@/services/NotificationService';
 
 export default function NotificationsScreen() {
